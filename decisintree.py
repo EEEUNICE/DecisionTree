@@ -18,12 +18,13 @@ def Ent(dataSet):
     total_number = len(dataSet)
     labelCounts = {}
     for column in dataSet:
-        currentLabel = column[-1]
-        if currentLabel not in labelCounts.keys():
+        currentLabel = column[-1]                       #取label的值
+        if currentLabel not in labelCounts.keys():      #统计lable的个数
             labelCounts[currentLabel] = 0
         labelCounts[currentLabel] += 1
     Ent = 0.0
-    for key in labelCounts:
+    
+    for key in labelCounts:                             #计算当前label下类别的信息熵
         prob = float(labelCounts[key]) / total_number
         Ent -= prob * log(prob, 2)
 
@@ -46,30 +47,33 @@ def splitContinuousDataSet(dataSet, axis, value, direction):
     for column in dataSet:
         if direction == 0:
             if column[axis] > value:
-                # reducedColumn = column[:axis]
-                # reducedColumn.extend(column[axis+1:])
                 retDataset.append(column)
         else:
             if column[axis] <= value:
-                # reducedColumn = column[:axis]
-                # reducedColumn.extend(column[axis+1:])
                 retDataset.append(column)
 
     return retDataset
 
 #选择最优的属性划分
+    '''
+    key!!!
+    '''
 def chooseBestFeaturetoSplit(dataSet, features):
-    numFeatures = len(dataSet[0]) - 1
+    numFeatures = len(dataSet[0]) - 1           #取特征数
     baseEntropy = Ent(dataSet)                  #计算信息熵 
+    
+    #初始化参数
     bestGain = 0.0
     bestFeature = -1
     bestSplitDict = {}
+    
     for i in range(numFeatures):
         featureList = [example[i] for example in dataSet]
+        #连续值处理
         if type(featureList[0]).__name__ == 'float' or type(featureList[0]).__name__ == 'int':
             sortList = sorted(featureList)
             splitList = []
-            for j in range(len(sortList) - 1):
+            for j in range(len(sortList) - 1):   #划分候选值
                 splitList.append((sortList[j] + sortList[j+1]) / 2.0)
             bestSplitEntropy = 100
             slen = len(splitList)
@@ -87,6 +91,7 @@ def chooseBestFeaturetoSplit(dataSet, features):
                     bestSplit = j
             bestSplitDict[features[i]] = splitList[bestSplit]
             Gain = baseEntropy - bestSplitEntropy
+        #离散值处理
         else:
             uniqueVals = set(featureList)
             newEntropy = 0.0
@@ -98,6 +103,8 @@ def chooseBestFeaturetoSplit(dataSet, features):
         if Gain > bestGain:
             bestGain = Gain
             bestFeature = i
+            
+            
     if type(dataSet[0][bestFeature]).__name__ == 'float' or type(dataSet[0][bestFeature]).__name__ == 'int':
         bestSplitValue = bestSplitDict[features[bestFeature]]
         features[bestFeature] = features[bestFeature] + '<=' + str(bestSplitValue)
@@ -129,11 +136,13 @@ def creatTree(dataSet, features, data_full, features_full):
     #data中样本全属于同一类别 递归返回
     if classList.count(classList[0]) == len(classList):
         return classList[0]
+    
    #当所有的特征都用完时，采用多数表决的方法来决定该叶子节点的分类
    #即该叶节点中属于某一类最多的样本数，那么我们就说该叶节点属于那一类！   递归返回
     if len(dataSet[0]) == 1:
         return majorityCnt(classList)
- 
+    
+   #从feature中寻找最优属性
     bestFeat = chooseBestFeaturetoSplit(dataSet, features)
     bestFeatFeature = features[bestFeat]
     mytree = {bestFeatFeature:{}}
